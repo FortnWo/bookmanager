@@ -28,7 +28,7 @@ public class BaiduAiService {
     }
 
     /**
-     * 按 Python 脚本的 messages 结构发送请求，返回模型文本回复（choices[0].message.content）
+     * messages发送请求，返回模型文本回复（choices[0].message.content）
      * 支持可选参数：temperature, top_p, max_tokens
      */
     public String chatWithMessages(String model, List<Map<String, String>> messages, double temperature, double topP,
