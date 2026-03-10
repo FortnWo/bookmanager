@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>图书借阅管理系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+
+        /* 给所有元素和伪元素统一加过渡效果 */
+        *,
+        *::before{
+        transition: all 0.3s ease-in-out; /* 0.3s 线性过渡，速度适中 */
+        }
+        *::after {
+        transition: all 0.3s ease-in-out; /* 0.3s 线性过渡，速度适中 */
+        }
+
+        body {
+            background-image: url("/img/2.jpg");
+            background-size: cover;
+            min-height: 100vh;
+        }
+
+        .navbar-custom {
+            background: linear-gradient(90deg, #21D4FD 0%, #B721FF 100%);
+        }
+
+        .navbar-brand {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .navbar-nav .nav-link {
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+
+        .dropdown-menu {
+            min-width: 120px;
+        }
+
+        .user-info .dropdown-toggle {
+            color: #fff !important;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.3rem;
+            }
+
+            .navbar-nav .nav-link {
+                font-size: 1rem;
+                margin-right: 0;
+            }
+        }
+
+        .card-bg-light {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            margin: 40px auto;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: 2px solid rgba(100, 100, 100, 0.5);
+        }
+
+        /* AI 小助理 样式 */
+        #aiWidget {
+            width: 320px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 2000;
+        }
+
+        #aiWidget .ai-header {
+            padding: 8px 12px;
+            background: #007bff;
+            color: #fff;
+            border-radius: 8px 8px 0 0;
+        }
+
+        #aiBody {
+            height: 200px;
+            overflow: auto;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        #aiBody .msg {
+            margin: 6px 0;
+        }
+
+        #aiBody .msg.user {
+            text-align: right;
+        }
+
+        #aiBody .msg.bot {
+            text-align: left;
+        }
+
+        #aiBody .msg span {
+            padding: 6px 10px;
+            border-radius: 12px;
+        }
+
+        #aiBody .msg.user span {
+            background: #e9f5ff;
+        }
+
+        #aiBody .msg.bot span {
+            background: #f5f5f5;
+        }
+
+        #aiInput {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #aiSend {
+            margin-left: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-custom navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">图书借阅管理系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNavbar"
+                aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav mr-auto" sec:authorize="hasRole('ADMIN')">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/book/getAll}">图书管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/reader/getAll}">读者管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/record/getAll}">借还管理</a>
+                    </li>
+                    <!-- AI 参数入口，仅管理员可见 -->
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/ai/settings}">AI 参数</a>
+                    </li>
+                    <!-- 文档新增入口，仅管理员可见 -->
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/admin/document/toAddPage}">新增文档</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav mr-auto" sec:authorize="hasRole('USER')">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/book/getAll}">图书信息</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/record/getOwnRecord}">借阅记录</a>
+                    </li>
+                </ul>
+                <div class="user-info ml-auto d-flex align-items-center">
+                    <div class="dropdown">
+                        <a class="dropdown-toggle" href="#" id="dropdownMenuButton" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false" th:text="${session.name}+', 您好'"></a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                            <a class="dropdown-item" th:href="@{/user/toInfoPage}"
+                                sec:authorize="hasRole('USER')">个人信息</a>
+                            <a class="dropdown-item" th:href="@{/toChPwdPage}">修改密码</a>
+                            <a class="dropdown-item" th:href="@{/logout}">注销</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+        <div class="card-bg-light">
+            <div class="card-header">
+                <h1>通知公告</h1>
+            </div>
+            <div class="card-body">
+                <p th:text="${announcement != null ? announcement.content : '暂无公告'}">暂无公告</p>
+                <a th:href="@{/admin/announcement/edit}" class="btn btn-primary mt-3"
+                    sec:authorize="hasRole('ADMIN')">编辑公告</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部居中 AI 入口条 -->
+    <div id="aiEntryBar"
+        style="position:fixed; left:50%; transform:translateX(-50%); bottom:20px; width: min(900px, 92%); background: rgba(255,255,255,0.7); backdrop-filter: blur(6px); border-radius: 28px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); z-index: 1500; display:flex; align-items:center; padding:8px 10px;">
+        <input id="aiEntry" type="text" placeholder="向 AI 提问：例如“有没有《人类简史》？”"
+            style="flex:1; border:none; background:transparent; padding:10px 14px; outline:none; font-size:14px;" />
+        <button id="aiEntrySend" class="btn btn-primary" style="border-radius:22px; padding:6px 16px;">发送</button>
+    </div>
+
+    <!-- AI 聊天覆盖层（居中面板） -->
+    <div id="aiOverlay" style="display:none; position:fixed; inset:0; background: rgba(0, 0, 0, 0.5); z-index: 3000;">
+        <div id="aiPanel"
+            style="max-width:900px; width:90%; height:75vh; margin:5vh auto; background:rgba(255,255,255,0.75); border-radius:28px; display:flex; flex-direction:column; box-shadow:0 8px 30px rgba(0,0,0,0.25);">
+            <div
+                style="padding:10px 14px; background:rgba(14, 70, 203, 0.8); color:#fff; border-radius:12px 12px 0 0; display:flex; align-items:center; justify-content:space-between;">
+                <div>AI 小助理</div>
+                <div>
+                    <button id="aiReset" class="btn btn-sm btn-outline-light mr-2">重置会话</button>
+                    <button id="aiClose" class="btn btn-sm btn-light">关闭</button>
+                </div>
+            </div>
+            <div id="aiBody" style="flex:1; overflow:auto; padding:14px; font-size:14px; line-height:1.6;">
+                <div style="color:#666; text-align:center; margin-top:40px;">你好，我是书馆小助理，可以闲聊或帮你找书~</div>
+            </div>
+            <div style="padding:10px 12px; border-top:1px solid rgba(255,255,255,0.8); border-radius: 28px;display:flex;">
+                <input id="aiInput" type="text" placeholder="问点什么吧..."
+                    style="flex:1; padding:10px 12px;background:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.8); border-radius:6px;" />
+                <button id="aiSend" class="btn btn-primary" style="margin-left:10px;border-radius:22px;">发 送</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+        function appendMsg(who, text) {
+            const body = document.getElementById('aiBody');
+            const div = document.createElement('div');
+            div.classList.add('msg', who);
+            div.innerHTML = who === 'user'
+                ? '<div style="text-align:right"><span style="background:#e9f5ff;padding:6px 10px;border-radius:12px;">' + escapeHtml(text) + '</span></div>'
+                : '<div style="text-align:left"><span style="background:#f5f5f5;padding:6px 10px;border-radius:12px;">' + escapeHtml(text) + '</span></div>';
+            body.appendChild(div);
+            body.scrollTop = body.scrollHeight;
+        }
+        function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+
+        const overlay = document.getElementById('aiOverlay');
+        const aiClose = document.getElementById('aiClose');
+        const aiReset = document.getElementById('aiReset');
+        const aiSend = document.getElementById('aiSend');
+        const aiInput = document.getElementById('aiInput');
+        const aiEntry = document.getElementById('aiEntry');
+        const aiEntrySend = document.getElementById('aiEntrySend');
+
+        function openOverlay() { overlay.style.display = 'block'; aiInput.focus(); }
+        aiClose.addEventListener('click', function () { overlay.style.display = 'none'; });
+        aiSend.addEventListener('click', send);
+        aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+        aiReset.addEventListener('click', function () {
+            fetch('/api/ai/reset', { method: 'POST' }).then(r => r.json()).then(() => {
+                const body = document.getElementById('aiBody');
+                body.innerHTML = '<div style="color:#666; text-align:center; margin-top:40px;">会话已重置，开始新的对话吧。</div>';
+            }).catch(err => {
+                alert('重置失败：' + err.message);
+            })
+        });
+
+        // 入口条事件：输入文本后回车/点击发送即打开面板并作为首条消息
+        // aiEntry.addEventListener('focus', function () { openOverlay(); });
+        aiEntry.addEventListener('keydown', function (e) { if (e.key === 'Enter') entrySend(); });
+        aiEntrySend.addEventListener('click', entrySend);
+        function entrySend() {
+            const txt = aiEntry.value.trim();
+            if (!txt) { 
+                // openOverlay(); 
+                return; 
+            }
+            openOverlay();
+            aiInput.value = txt;
+            aiEntry.value = '';
+            send();
+        }
+
+        function send() {
+            const input = document.getElementById('aiInput');
+            const txt = input.value.trim();
+            if (!txt) return;
+            appendMsg('user', txt);
+            input.value = '';
+            appendMsg('bot', '正在思考...');
+
+            fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: txt })
+            }).then(r => r.json()).then(j => {
+                // remove the '正在思考...' placeholder (最后一个 bot 消息)
+                const body = document.getElementById('aiBody');
+                const last = body.lastElementChild;
+                if (last) last.remove();
+                appendMsg('bot', j.reply || '抱歉，未收到回应');
+            }).catch(err => {
+                const body = document.getElementById('aiBody');
+                const last = body.lastElementChild;
+                if (last) last.remove();
+                appendMsg('bot', '请求失败：' + err.message);
+            });
+        }
+    </script>
+</body>
+
+</html>

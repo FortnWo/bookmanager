@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    username: root
+    password: 123456
+    url: jdbc:mysql://localhost:3306/library?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=GMT%2B8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.fortn.bookmanager.pojo
+  configuration:
+    map-underscore-to-camel-case: true
+
+baidu:
+  ai:
+    apiKey: "*************************" 
+    model: "ernie-speed-pro-128k"
+    temperature: 0.8
+    top_p: 0.9
+    max-tokens: 2048
+  ernie:
+    url: "https://qianfan.baidubce.com/v2/chat/completions"
+
+chat:
+  session:
+    max-messages: 50
+    max-tokens: 4000
